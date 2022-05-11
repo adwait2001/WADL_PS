@@ -1,35 +1,40 @@
 <style>
-    th, td {
-  padding: 15px;
-}
+    tr th{
+        padding: 4px;
+    }
 </style>
 
+<% if(count!=null) {%>
+    <h1>Count = <%=count%></h1>    
+<% } %>
 
-    <hr>
-    
-    <% if(student!=null) { %>
+<% if(student!=null) { %>
     <table border="1px">
-    <tr>
-        <th>Name</th>
-        <th>Div </th>
-        <th>Roll_no </th>
-        <th>Class </th>
-        <th>Delete Student</th>
-    </tr>
-    <% student.forEach(function(item){ %>
-    <tr> 
-        <td><%= item.Name%></td>
-        <td><%= item.Div %></td>
-        <td><%= item.Roll_no%></td>
-        <td><%= item.Class %></td>
-        <td>
-            <form method="post" action="/deleteStudents/<%= item._id %>">
-                <button type="submit">Delete</button>
-            </form>
-        </td>
-        
-    </td>
-    </tr>
-    <% }) %>
+        <tr>
+            <th>Name</th>
+            <th>Roll No</th>
+            <th>WAD Marks</th>
+            <th>CC Marks</th>
+            <th>DSBDA Marks</th>
+            <th>CNS Marks</th>
+            <th>AI Marks</th>
+        </tr>
+        <% student.forEach(function(item){ %>
+            <tr>
+                <td><%= item.Name%></td>
+                <td><%= item.Roll_No%></td>
+                <td><%= item.WAD_Marks%></td>
+                <td><%= item.CC_Marks%></td>
+                <td><%= item.DSBDA_Marks%></td>
+                <td><%= item.CNS_Marks%></td>
+                <td><%= item.AI_Marks%></td>
+                <td>
+                    <form action="/deleteStudent/<%=item._id %>" method="post">
+                        <button type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+
+        <% }) %>
     </table>
-    <% } %>
+<%} %>

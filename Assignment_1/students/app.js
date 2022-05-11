@@ -1,63 +1,77 @@
 const express = require('express');
-const bodyParser = require('body-parser');var app = express()
-var port = 3000
-const Student =require('./models')
-
-app.set("view engine", "ejs");
-app.use(bodyParser.urlencoded({ extended: true }))
-app.use(bodyParser.json())
-
-const dbConfig = require('./config');
+const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const Student = require('./model');
+const dbConfig = require('./config');
 
-mongoose.Promise = global.Promise;
+var PORT = 3000;
+var app = express();
 
-mongoose.connect(dbConfig.url, {
+app.set("view engine","ejs");   // for viewing
+app.use(bodyParser.urlencoded({extended: true}));   // used for parsing url encoded bodies
+app.use(bodyParser.json());     // used for parsing json data
+
+mongoose.connect(dbConfig.url,{
     useNewUrlParser: true
-}).then(() => {
-    console.log("Successfully connected to the database");    
-}).catch(err => {
-    console.log('Could not connect to the database. Exiting now...', err);
+}).then(()=>{
+    console.log("Connected to the database");
+}).catch((err)=>{
+    console.log("Cannot connect to the database. Possible error => ",err);
     process.exit();
 });
 
-
-app.get('/', (req, res) => {
-    res.render("index")
+// form
+app.get('/',(req,res)=>{
+    res.render("index");
 });
 
-app.post("/addStudent", (req, res) => {
-    var myData = new Student(req.body);
-    myData.save()
-    .then(item => {
-    res.send("item saved to database");
-    })
-    .catch(err => {
-    res.status(400).send("unable to save to database");
+// add student
+app.post('/addStudent',(req,res)=>{
+    var stud = new Student(req.body);
+    stud.save().then(()=>res.json({"message": "Successfully saved"})).catch((err)=>{
+        res.status(400).json({"error": err});
+    });
+});
+
+// get all students and count
+app.get('/students',(req,res)=>{
+    var query = {};
+    
+    if(Object.keys(req.query).length != 0){
+        var li = req.query['subject'].split(',').map(sub=>sub+"_Marks");
+        var marks = parseInt(req.query['marks']);
+        for(let i=0;i<li.length;i++){
+            query[li[i]] = {$gt: marks};
+        }
+    }
+    
+    Student.find(query).count().then((c)=>{
+        Student.find(query).then((student)=>{
+            res.render("table",{student:student, count:c});
+        })
+    }).catch((err)=>res.json({"error":err}));
+});
+
+// delete any student
+app.post('/deleteStudent/:id',(req,res)=>{
+    Student.findByIdAndDelete(req.params.id).then((student)=>{
+        res.redirect('/students');
+    }).catch((err)=>{
+        res.json({"error": err});
     })
 });
 
+// update any student
+app.get('/updateStudent',(req,res)=>{
+    var id = req.query['rollNo'];
+    var marks = parseInt(req.query['marks']);
+    Student.findOneAndUpdate({"Roll_No":id},{$inc:{"WAD_Marks":marks, "DSBDA_Marks":marks,"CC_Marks":marks,"CNS_Marks":marks,"AI_Marks":marks}}).then(()=>{
+        res.redirect('/students');
+    }).catch((err)=>{
+        res.json({"error": err});
+    });
+});
 
-app.get('/getStudents',(req,res)=>{
-    console.log(req.query)
-    Student.find(req.query).
-    then(student=>{
-        res.render("table",{student:student})
-    }).catch(err=>{
-        res.json({ "message" : "err"})
-    })
+app.listen(PORT,()=>{
+    console.log("Listening");
 })
-
-
-
-app.post('/deleteStudents/:id',(req,res)=>{
-    Student.findByIdAndDelete(req.params.id).
-    then(student=>{
-        console.log("Deleted Successfully")
-        res.redirect('/getStudents')
-    })
-})
-
-app.listen(3000, () => {
-    console.log("Server is listening on port 3000");
-});
